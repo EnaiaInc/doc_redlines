@@ -79,7 +79,7 @@ fn to_nif_redline(entry: RevisionEntry) -> NifRedline {
 }
 
 #[rustler::nif]
-fn extract_redlines_from_path(path: String) -> Result<NifResult, String> {
+fn nif_extract_redlines_from_path(path: String) -> Result<NifResult, String> {
     let revisions =
         extract_revisions_from_doc(std::path::Path::new(&path)).map_err(|err| err.to_string())?;
     let redlines = revisions.into_iter().map(to_nif_redline).collect();
