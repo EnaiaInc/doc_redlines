@@ -2848,7 +2848,7 @@ mod tests {
             SourceSegment {
                 start_cp: 22,
                 end_cp: 34,
-                text: "Austin Fahy ".to_string(),
+                text: "Test Person ".to_string(),
                 formatting_fingerprint: 1,
                 formatting_sequence_fingerprint: 1,
                 source_chpx_id: Some(2),
@@ -2858,7 +2858,7 @@ mod tests {
             SourceSegment {
                 start_cp: 34,
                 end_cp: 52,
-                text: "of Cresa Partners ".to_string(),
+                text: "of Test Company ".to_string(),
                 formatting_fingerprint: 1,
                 formatting_sequence_fingerprint: 1,
                 source_chpx_id: Some(3),

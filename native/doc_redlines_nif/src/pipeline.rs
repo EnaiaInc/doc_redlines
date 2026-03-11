@@ -6621,7 +6621,7 @@ mod tests {
         let mut entries = vec![
             RevisionEntry {
                 revision_type: RevisionType::Deletion,
-                text: "Chris Shepher".to_string(),
+                text: "Test Perso".to_string(),
                 author: Some("Author".to_string()),
                 timestamp: Some("2025-07-23T11:18:00".to_string()),
                 start_cp: 300,
@@ -6632,7 +6632,7 @@ mod tests {
             },
             RevisionEntry {
                 revision_type: RevisionType::Insertion,
-                text: "Chris Shepherd".to_string(),
+                text: "Test Person".to_string(),
                 author: Some("Other".to_string()),
                 timestamp: Some("2025-07-24T11:18:00".to_string()),
                 start_cp: 300,
@@ -6660,7 +6660,7 @@ mod tests {
             entry.revision_type == RevisionType::Deletion
                 && entry.start_cp == 300
                 && entry.end_cp == 314
-                && entry.text == "Chris Shepherd"
+                && entry.text == "Test Person"
         }));
     }
 
@@ -6791,7 +6791,7 @@ mod tests {
                 revision_type: RevisionType::Insertion,
                 text: " floor common areas shall be at no cost for the lease term and any "
                     .to_string(),
-                author: Some("Ben Garrett".to_string()),
+                author: Some("Test Author".to_string()),
                 timestamp: Some("2025-04-01T11:37:00".to_string()),
                 start_cp: 8428,
                 end_cp: 8477,
@@ -6803,7 +6803,7 @@ mod tests {
                 revision_type: RevisionType::Insertion,
                 text: "s shall be at no cost for the lease term and any extension terms thereof. "
                     .to_string(),
-                author: Some("Ben Garrett".to_string()),
+                author: Some("Test Author".to_string()),
                 timestamp: Some("2025-04-01T11:37:00".to_string()),
                 start_cp: 8429,
                 end_cp: 8502,
@@ -6814,7 +6814,7 @@ mod tests {
             RevisionEntry {
                 revision_type: RevisionType::Insertion,
                 text: "".to_string(),
-                author: Some("Ben Garrett".to_string()),
+                author: Some("Test Author".to_string()),
                 timestamp: Some("2025-04-01T11:37:00".to_string()),
                 start_cp: 8477,
                 end_cp: 8477,
@@ -6825,7 +6825,7 @@ mod tests {
             RevisionEntry {
                 revision_type: RevisionType::Insertion,
                 text: "extension terms thereof. ".to_string(),
-                author: Some("Ben Garrett".to_string()),
+                author: Some("Test Author".to_string()),
                 timestamp: Some("2025-04-01T11:37:00".to_string()),
                 start_cp: 8477,
                 end_cp: 8502,
@@ -7082,7 +7082,7 @@ mod tests {
         let mut entries = vec![
             RevisionEntry {
                 revision_type: RevisionType::Insertion,
-                text: "/25: Colonnade Properties, LLC Property Management is on-site. On-site personnel includes one senior property manager, assistant property manager, building engineer and day porter.  ".to_string(),
+                text: "/25: Example Property Management is on-site. On-site personnel includes one senior property manager, assistant property manager, building engineer and day porter.  ".to_string(),
                 author: Some("Author".to_string()),
                 timestamp: Some("2025-06-25T14:01:00".to_string()),
                 start_cp: 1416,
@@ -7107,7 +7107,7 @@ mod tests {
         augment_sentence_clause_aliases_from_tail_evidence(&mut entries);
 
         assert!(entries.iter().any(|entry| {
-            entry.text == "/25: Colonnade Properties, LLC Property Management is on-site."
+            entry.text == "/25: Example Property Management is on-site."
         }));
         assert!(entries.iter().any(|entry| {
             entry.text == "On-site personnel includes one senior property manager, assistant property manager, building engineer and day porter."
@@ -7624,7 +7624,7 @@ mod tests {
             },
             RevisionEntry {
                 revision_type: RevisionType::Insertion,
-                text: "Suite 2400 ".to_string(),
+                text: "Suite X ".to_string(),
                 author: Some("Author".to_string()),
                 timestamp: Some("2025-07-26T16:01:00".to_string()),
                 start_cp: 37,
