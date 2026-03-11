@@ -1,0 +1,45 @@
+[build.env]
+passthrough = [
+  "RUSTLER_NIF_VERSION",
+  "RUST_FONTCONFIG_DLOPEN"
+]
+
+[target.aarch64-unknown-linux-gnu]
+image = "ghcr.io/cross-rs/aarch64-unknown-linux-gnu:0.2.5"
+pre-build = [
+  "apt-get update",
+  "apt-get install -y python3 wget gnupg software-properties-common",
+  "wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add -",
+  "add-apt-repository 'deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-6.0 main'",
+  "apt-get update",
+  "apt-get install -y clang-6.0 libclang-6.0-dev llvm-6.0-dev",
+  "update-alternatives --install /usr/bin/clang clang /usr/bin/clang-6.0 100",
+  "update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-6.0 100",
+  "echo 'Installing make wrapper to force cross-compiler...'",
+  "mv /usr/bin/make /usr/bin/make.real",
+  "cat > /usr/bin/make << 'MAKEWRAPPER'\n#!/bin/bash\nexport CC=\"aarch64-linux-gnu-gcc\"\nexport CXX=\"aarch64-linux-gnu-g++\"\nexport AR=\"aarch64-linux-gnu-ar\"\nexport AS=\"aarch64-linux-gnu-as\"\nexport LD=\"aarch64-linux-gnu-ld\"\nexport RANLIB=\"aarch64-linux-gnu-ranlib\"\nexport OBJCOPY=\"aarch64-linux-gnu-objcopy\"\nexport STRIP=\"aarch64-linux-gnu-strip\"\n# Force MuPDF to skip fonts and NOT use host objcopy by passing vars to make\nexec /usr/bin/make.real \"$@\" CC=\"$CC\" CXX=\"$CXX\" AR=\"$AR\" LD=\"$LD\" RANLIB=\"$RANLIB\" OBJCOPY=\"$OBJCOPY\" TOFU=yes TOFU_CJK=yes TOFU_NOTO=yes TOFU_SYMBOL=yes TOFU_EMOJI=yes TOFU_SIL=yes HAVE_OBJCOPY=no\nMAKEWRAPPER",
+  "chmod +x /usr/bin/make",
+  "echo 'Verifying setup:'",
+  "which aarch64-linux-gnu-gcc && aarch64-linux-gnu-gcc --version | head -1",
+  "which aarch64-linux-gnu-ar",
+  "make --version | head -1"
+]
+
+[target.aarch64-unknown-linux-gnu.env]
+LIBCLANG_PATH = "/usr/lib/llvm-6.0/lib"
+CC = "aarch64-linux-gnu-gcc"
+CXX = "aarch64-linux-gnu-g++"
+AR = "aarch64-linux-gnu-ar"
+AS = "aarch64-linux-gnu-as"
+LD = "aarch64-linux-gnu-ld"
+RANLIB = "aarch64-linux-gnu-ranlib"
+OBJCOPY = "aarch64-linux-gnu-objcopy"
+STRIP = "aarch64-linux-gnu-strip"
+CC_aarch64_unknown_linux_gnu = "aarch64-linux-gnu-gcc"
+AR_aarch64_unknown_linux_gnu = "aarch64-linux-gnu-ar"
+TARGET_CC = "aarch64-linux-gnu-gcc"
+TARGET_AR = "aarch64-linux-gnu-ar"
+CARGO_BUILD_TARGET = "aarch64-unknown-linux-gnu"
+CROSS_COMPILE = "aarch64-linux-gnu-"
+CFLAGS = "-DTOFU=1 -DTOFU_CJK=1 -DTOFU_NOTO=1 -DTOFU_SYMBOL=1 -DTOFU_EMOJI=1 -DTOFU_SIL=1"
+VERBOSE = "1"

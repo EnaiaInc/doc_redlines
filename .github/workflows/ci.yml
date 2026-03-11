@@ -1,0 +1,126 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  check-formatting:
+    name: Check formatting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+
+      - name: Set up Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: 28
+          elixir-version: 1.19
+
+      - name: Install Elixir dependencies
+        run: |
+          mix local.rebar --force
+          mix local.hex --force
+          mix deps.get
+
+      - name: Check Rust formatting
+        working-directory: native/doc_redlines_nif
+        run: cargo fmt --all -- --check
+
+      - name: Check Elixir formatting
+        run: mix format --check-formatted
+
+      - name: Run Credo
+        run: mix credo --strict
+
+  test-elixir:
+    name: Test Elixir ${{ matrix.elixir }} / OTP ${{ matrix.otp }}
+
+    env:
+      MIX_ENV: test
+      DOC_REDLINES_BUILD: "1"
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - elixir: 1.19.0
+            otp: 26.0
+          - elixir: 1.19.5
+            otp: 27.3
+          - elixir: 1.19.5
+            otp: 28.3
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Set up Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{ matrix.otp }}
+          elixir-version: ${{ matrix.elixir }}
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libfontconfig1-dev clang-14 libclang-14-dev llvm-14-dev
+
+      - name: Retrieve cached Rust dependencies
+        uses: actions/cache@v4
+        id: cargo-cache
+        with:
+          path: ~/.cargo
+          key: ${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-cargo-${{ hashFiles('**/Cargo.lock') }}-${{ hashFiles('**/Cargo.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-cargo-
+
+      - name: Retrieve cached Elixir dependencies
+        uses: actions/cache@v4
+        id: mix-cache
+        with:
+          path: deps
+          key: ${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-mix-${{ hashFiles('**/mix.lock') }}-${{ hashFiles('**/mix.exs') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-mix-
+
+      - name: Retrieve cached Elixir build
+        uses: actions/cache@v4
+        id: build-cache
+        with:
+          path: _build
+          key: ${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-build-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-build-
+
+      - name: Install Elixir dependencies
+        if: steps.mix-cache.outputs.cache-hit != 'true'
+        run: |
+          mix local.rebar --force
+          mix local.hex --force
+          mix deps.get
+          mix deps.compile
+
+      - name: Compile Elixir
+        run: mix compile --warnings-as-errors
+
+      - name: Run tests
+        run: mix test
+
+      - name: Run Credo
+        if: matrix.elixir == '1.19.5' && matrix.otp == '28.3'
+        run: mix credo --strict
+
+      - name: Run Dialyzer
+        if: matrix.elixir == '1.19.5' && matrix.otp == '28.3'
+        run: mix dialyzer
