@@ -3394,7 +3394,7 @@ mod tests {
             SourceSegment {
                 start_cp: 18,
                 end_cp: 32,
-                text: " notify tenants".to_string(),
+                text: " notify parties".to_string(),
                 formatting_fingerprint: 1,
                 formatting_sequence_fingerprint: 1,
                 source_chpx_id: Some(3),
@@ -3611,7 +3611,7 @@ mod tests {
             SourceSegment {
                 start_cp: 41,
                 end_cp: 74,
-                text: " the satisfaction of Sublandlord. ".to_string(),
+                text: " the satisfaction of counterparty. ".to_string(),
                 formatting_fingerprint: 102,
                 formatting_sequence_fingerprint: 102,
                 source_chpx_id: Some(12),
