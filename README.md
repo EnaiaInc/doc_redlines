@@ -15,7 +15,7 @@ Add to `mix.exs`:
 ```elixir
 def deps do
   [
-    {:doc_redlines, "~> 0.5"}
+    {:doc_redlines, "~> 0.6"}
   ]
 end
 ```
