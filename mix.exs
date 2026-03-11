@@ -1,7 +1,7 @@
 defmodule DocRedlines.MixProject do
   use Mix.Project
 
-  @version "0.5.1"
+  @version "0.5.0"
   @source_url "https://github.com/EnaiaInc/doc_redlines"
 
   def project do
