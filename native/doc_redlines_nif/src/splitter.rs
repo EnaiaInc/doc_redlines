@@ -1139,7 +1139,9 @@ fn insert_timestamp_excursion_block_splits(
     }
 
     for window in blocks.windows(3) {
-        let [left, middle, right] = window else { continue };
+        let [left, middle, right] = window else {
+            continue;
+        };
         let (Some(left_ts), Some(middle_ts), Some(right_ts)) =
             (left.timestamp, middle.timestamp, right.timestamp)
         else {
@@ -1279,7 +1281,11 @@ fn insert_anchor_compat_terminal_tail_excursion_split(
         }
 
         let middle_text = block_text(middle_block, segments);
-        if !middle_text.chars().next().is_some_and(|ch| ch.is_whitespace()) {
+        if !middle_text
+            .chars()
+            .next()
+            .is_some_and(|ch| ch.is_whitespace())
+        {
             continue;
         }
         if !first_nonspace_char(&middle_text).is_some_and(|ch| ch.is_ascii_lowercase()) {
@@ -1430,7 +1436,11 @@ fn insert_anchor_compat_midword_prefix_splits(
             continue;
         };
 
-        if !left_text.chars().next().is_some_and(|ch| ch.is_whitespace()) {
+        if !left_text
+            .chars()
+            .next()
+            .is_some_and(|ch| ch.is_whitespace())
+        {
             continue;
         }
         if !left_first.is_ascii_uppercase()
@@ -1450,7 +1460,9 @@ fn insert_anchor_compat_midword_prefix_splits(
         if middle.end_idx.saturating_sub(middle.start_idx) < 2 {
             continue;
         }
-        if block_alnum_len(middle_block, segments) < 8 || block_alnum_len(right_block, segments) < 12 {
+        if block_alnum_len(middle_block, segments) < 8
+            || block_alnum_len(right_block, segments) < 12
+        {
             continue;
         }
 
@@ -1549,13 +1561,18 @@ fn insert_anchor_compat_word_boundary_excursion_splits(
             continue;
         };
 
-        if !left_text.chars().next_back().is_some_and(|ch| ch.is_whitespace()) {
+        if !left_text
+            .chars()
+            .next_back()
+            .is_some_and(|ch| ch.is_whitespace())
+        {
             continue;
         }
         if !middle_first.is_ascii_lowercase() {
             continue;
         }
-        if block_alnum_len(left_block, segments) < 8 || block_alnum_len(middle_block, segments) < 8 {
+        if block_alnum_len(left_block, segments) < 8 || block_alnum_len(middle_block, segments) < 8
+        {
             continue;
         }
         if !right_text.chars().all(|ch| ch.is_whitespace()) {
@@ -1624,7 +1641,11 @@ fn insert_anchor_compat_lowercase_clause_excursion_split(
             continue;
         };
 
-        if !left_text.chars().next_back().is_some_and(|ch| ch.is_whitespace()) {
+        if !left_text
+            .chars()
+            .next_back()
+            .is_some_and(|ch| ch.is_whitespace())
+        {
             continue;
         }
         if !left_last.is_ascii_alphabetic()
@@ -1712,11 +1733,13 @@ fn contiguous_anchor_compat_blocks(
     };
 
     let mut start_idx = 0usize;
-    let mut current_compatible =
-        first.segment_timestamp.is_some_and(|timestamp| timestamp.compatible_with(anchor_ts));
+    let mut current_compatible = first
+        .segment_timestamp
+        .is_some_and(|timestamp| timestamp.compatible_with(anchor_ts));
     for idx in 1..segments.len() {
-        let compatible =
-            segments[idx].segment_timestamp.is_some_and(|timestamp| timestamp.compatible_with(anchor_ts));
+        let compatible = segments[idx]
+            .segment_timestamp
+            .is_some_and(|timestamp| timestamp.compatible_with(anchor_ts));
         if compatible == current_compatible {
             continue;
         }
@@ -1750,14 +1773,16 @@ fn compat_blocks_share_timestamp(
     right: AnchorCompatBlock,
     segments: &[SourceSegment],
 ) -> bool {
-    segments[left.start_idx..left.end_idx].iter().any(|left_segment| {
-        let Some(left_ts) = left_segment.segment_timestamp else {
-            return false;
-        };
-        segments[right.start_idx..right.end_idx]
-            .iter()
-            .any(|right_segment| right_segment.segment_timestamp == Some(left_ts))
-    })
+    segments[left.start_idx..left.end_idx]
+        .iter()
+        .any(|left_segment| {
+            let Some(left_ts) = left_segment.segment_timestamp else {
+                return false;
+            };
+            segments[right.start_idx..right.end_idx]
+                .iter()
+                .any(|right_segment| right_segment.segment_timestamp == Some(left_ts))
+        })
 }
 
 fn compat_block_distinct_timestamp_count(
@@ -1958,7 +1983,12 @@ fn bracketed_note_prefix_boundary(left: &SourceSegment, right: &SourceSegment) -
     if !left_trimmed.starts_with('[') || !left_trimmed.contains(':') {
         return false;
     }
-    if !left.text.chars().next_back().is_some_and(|ch| ch.is_whitespace()) {
+    if !left
+        .text
+        .chars()
+        .next_back()
+        .is_some_and(|ch| ch.is_whitespace())
+    {
         return false;
     }
     if alnum_len(&right.text) < 20 {

@@ -7,7 +7,7 @@ pub mod pipeline;
 pub mod splitter;
 pub mod sprm;
 
-pub use doc_parser::{parse_doc_file, DocParseError};
+pub use doc_parser::{DocParseError, parse_doc_file};
 pub use model::{ParsedDocument, RevisionEntry, RevisionType};
 pub use pipeline::extract_revisions;
 
@@ -80,8 +80,8 @@ fn to_nif_redline(entry: RevisionEntry) -> NifRedline {
 
 #[rustler::nif]
 fn extract_redlines_from_path(path: String) -> Result<NifResult, String> {
-    let revisions = extract_revisions_from_doc(std::path::Path::new(&path))
-        .map_err(|err| err.to_string())?;
+    let revisions =
+        extract_revisions_from_doc(std::path::Path::new(&path)).map_err(|err| err.to_string())?;
     let redlines = revisions.into_iter().map(to_nif_redline).collect();
     Ok(NifResult { redlines })
 }

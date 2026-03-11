@@ -10,7 +10,9 @@ use crate::model::{
     SourceSegment, StackMetadata, StyleDefaults,
 };
 use crate::normalize::normalize_revision_text;
-use crate::splitter::{DocumentTextIndex, extract_text_for_range, split_points_for_redline, slice_chars};
+use crate::splitter::{
+    DocumentTextIndex, extract_text_for_range, slice_chars, split_points_for_redline,
+};
 use crate::sprm::{RevisionSprms, ToggleOp, collect_revision_sprms};
 
 #[derive(Debug, Clone)]
@@ -200,10 +202,7 @@ fn augment_lo_current_text_overlap_aliases(
 
         let (deletion_aliases, mut insertion_aliases, deletion_barriers) =
             simulate_lo_current_text_overlap_block(&block, &hidden_ranges);
-        merge_overlap_aliases_across_deleted_spans(
-            &mut insertion_aliases,
-            &deletion_barriers,
-        );
+        merge_overlap_aliases_across_deleted_spans(&mut insertion_aliases, &deletion_barriers);
         let clipped_alias = simulate_lo_current_text_overlap_clipped_alias(&block);
         let range_mutation_alias = simulate_lo_current_text_overlap_range_mutation_alias(&block);
 
@@ -367,8 +366,7 @@ fn augment_short_fragment_contiguous_aliases(entries: &mut Vec<RevisionEntry>) {
                 idx += 1;
                 continue;
             };
-            let (Some(base_para), Some(base_offset)) =
-                (base.paragraph_index, base.char_offset)
+            let (Some(base_para), Some(base_offset)) = (base.paragraph_index, base.char_offset)
             else {
                 idx += 1;
                 continue;
@@ -426,7 +424,11 @@ fn augment_short_fragment_contiguous_aliases(entries: &mut Vec<RevisionEntry>) {
                 }
             }
 
-            idx = if next_idx > idx + 1 { next_idx } else { idx + 1 };
+            idx = if next_idx > idx + 1 {
+                next_idx
+            } else {
+                idx + 1
+            };
         }
     }
 
@@ -510,8 +512,18 @@ fn augment_lowercase_continuation_aliases(entries: &mut Vec<RevisionEntry>) {
         {
             continue;
         }
-        if left.text.chars().filter(|ch| ch.is_ascii_alphanumeric()).count() < 8
-            || right.text.chars().filter(|ch| ch.is_ascii_alphanumeric()).count() < 8
+        if left
+            .text
+            .chars()
+            .filter(|ch| ch.is_ascii_alphanumeric())
+            .count()
+            < 8
+            || right
+                .text
+                .chars()
+                .filter(|ch| ch.is_ascii_alphanumeric())
+                .count()
+                < 8
         {
             continue;
         }
@@ -653,7 +665,11 @@ fn lo_current_text_overlap_block_author(block: &[LoOverlapRunInfo]) -> Option<u1
 fn simulate_lo_current_text_overlap_block(
     block: &[LoOverlapRunInfo],
     _hidden_ranges: &[(u32, u32)],
-) -> (Vec<LoOverlapAliasSpan>, Vec<LoOverlapAliasSpan>, Vec<(u32, u32)>) {
+) -> (
+    Vec<LoOverlapAliasSpan>,
+    Vec<LoOverlapAliasSpan>,
+    Vec<(u32, u32)>,
+) {
     let mut base = Vec::<LoOverlapVisibleChar>::new();
     let mut cp_to_idx = HashMap::<u32, usize>::new();
 
@@ -839,7 +855,9 @@ fn simulate_lo_current_text_overlap_clipped_alias(
         span_chars.push(ch.clone());
     }
 
-    let Some(start_cp) = span_start else { return None };
+    let Some(start_cp) = span_start else {
+        return None;
+    };
     let Some(end_cp) = span_end else { return None };
 
     if !lo_current_text_overlap_span_respects_run_edges(&span_chars) {
@@ -887,7 +905,13 @@ fn merge_overlap_aliases_across_deleted_spans(
             if !gap_deleted {
                 break;
             }
-            if current.text.chars().count().saturating_add(next.text.chars().count()) > 24 {
+            if current
+                .text
+                .chars()
+                .count()
+                .saturating_add(next.text.chars().count())
+                > 24
+            {
                 break;
             }
             current.end_cp = next.end_cp;
@@ -901,9 +925,7 @@ fn merge_overlap_aliases_across_deleted_spans(
     aliases.extend(merged);
     aliases.sort_by_key(|span| (span.start_cp, span.end_cp));
     aliases.dedup_by(|left, right| {
-        left.start_cp == right.start_cp
-            && left.end_cp == right.end_cp
-            && left.text == right.text
+        left.start_cp == right.start_cp && left.end_cp == right.end_cp && left.text == right.text
     });
 }
 
@@ -1050,20 +1072,25 @@ fn lo_current_text_overlap_span_respects_run_edges(chars: &[LoOverlapVisibleChar
     }
     let mut per_run = HashMap::<usize, (usize, usize, usize, usize)>::new();
     for ch in chars {
-        let entry = per_run
-            .entry(ch.run_idx)
-            .or_insert((ch.offset_in_run, ch.offset_in_run, 0, ch.run_len));
+        let entry = per_run.entry(ch.run_idx).or_insert((
+            ch.offset_in_run,
+            ch.offset_in_run,
+            0,
+            ch.run_len,
+        ));
         entry.0 = entry.0.min(ch.offset_in_run);
         entry.1 = entry.1.max(ch.offset_in_run);
         entry.2 += 1;
         entry.3 = ch.run_len;
     }
 
-    per_run.into_values().all(|(min_offset, max_offset, count, run_len)| {
-        let contiguous = max_offset.saturating_sub(min_offset).saturating_add(1) == count;
-        let touches_edge = min_offset == 0 || max_offset + 1 == run_len;
-        contiguous && touches_edge
-    })
+    per_run
+        .into_values()
+        .all(|(min_offset, max_offset, count, run_len)| {
+            let contiguous = max_offset.saturating_sub(min_offset).saturating_add(1) == count;
+            let touches_edge = min_offset == 0 || max_offset + 1 == run_len;
+            contiguous && touches_edge
+        })
 }
 
 fn lo_overlap_edge_strict_enabled() -> bool {
@@ -1108,9 +1135,11 @@ fn push_lo_current_text_overlap_entry(
         end_cp: span.end_cp,
         paragraph_index: Some(text_index.paragraph_index_at(span.start_cp.max(block_start_cp))),
         char_offset: Some(text_index.char_offset_at(span.start_cp.max(block_start_cp))),
-        context: Some(normalize_revision_text(
-            &text_index.context(span.start_cp, span.end_cp.max(span.start_cp.saturating_add(1)), 20),
-        )),
+        context: Some(normalize_revision_text(&text_index.context(
+            span.start_cp,
+            span.end_cp.max(span.start_cp.saturating_add(1)),
+            20,
+        ))),
     });
 }
 
@@ -1497,7 +1526,10 @@ fn collect_candidates_stateless(runs: &[ChpxRun]) -> Vec<RevisionCandidate> {
     out
 }
 
-fn collect_candidates_stateful(runs: &[ChpxRun], style_defaults: &StyleDefaults) -> Vec<RevisionCandidate> {
+fn collect_candidates_stateful(
+    runs: &[ChpxRun],
+    style_defaults: &StyleDefaults,
+) -> Vec<RevisionCandidate> {
     let mut out = Vec::new();
     let mut active = ActiveRevisionState::default();
     let mut prev_end: Option<u32> = None;
@@ -1557,7 +1589,10 @@ fn collect_candidates_stateful(runs: &[ChpxRun], style_defaults: &StyleDefaults)
     out
 }
 
-fn collect_candidates_event(runs: &[ChpxRun], style_defaults: &StyleDefaults) -> Vec<RevisionCandidate> {
+fn collect_candidates_event(
+    runs: &[ChpxRun],
+    style_defaults: &StyleDefaults,
+) -> Vec<RevisionCandidate> {
     let mut out = Vec::new();
     let mut active = ActiveRevisionState::default();
     let mut prev_end: Option<u32> = None;
@@ -1693,7 +1728,11 @@ fn dual_insertion_first_from_marks(marks: &RevisionSprms) -> Option<bool> {
     }
 }
 
-fn apply_revision_marks(active: &mut ActiveRevisionState, marks: &RevisionSprms, style_defaults: &StyleDefaults) {
+fn apply_revision_marks(
+    active: &mut ActiveRevisionState,
+    marks: &RevisionSprms,
+    style_defaults: &StyleDefaults,
+) {
     if let Some(op) = marks.insertion_toggle {
         apply_toggle_op(
             &mut active.insertion_active,
@@ -1993,14 +2032,11 @@ fn should_cancel_dual_micro_noop(
         && same_meta_pure_insertion(next, state.insertion_author, effective_insertion_timestamp)
 }
 
-fn same_meta_pure_insertion(
-    run: &ChpxRun,
-    author: Option<u16>,
-    timestamp: Option<Dttm>,
-) -> bool {
+fn same_meta_pure_insertion(run: &ChpxRun, author: Option<u16>, timestamp: Option<Dttm>) -> bool {
     let marks = collect_revision_sprms(run);
-    let has_insertion =
-        marks.has_insertion || marks.insertion_author.is_some() || marks.insertion_timestamp.is_some();
+    let has_insertion = marks.has_insertion
+        || marks.insertion_author.is_some()
+        || marks.insertion_timestamp.is_some();
     let has_deletion =
         marks.has_deletion || marks.deletion_author.is_some() || marks.deletion_timestamp.is_some();
 
@@ -2149,11 +2185,7 @@ fn resolve_insert_inside_delete_enabled() -> bool {
         .is_some_and(|value| value == "1")
 }
 
-fn clip_segments(
-    segments: &[SourceSegment],
-    start_cp: u32,
-    end_cp: u32,
-) -> Vec<SourceSegment> {
+fn clip_segments(segments: &[SourceSegment], start_cp: u32, end_cp: u32) -> Vec<SourceSegment> {
     let mut out = Vec::new();
     if start_cp >= end_cp {
         return out;
@@ -2324,10 +2356,7 @@ fn sort_candidates_for_lo_append(candidates: &mut [RevisionCandidate]) {
     }
 }
 
-fn compare_candidate_for_lo_stack(
-    left: &RevisionCandidate,
-    right: &RevisionCandidate,
-) -> Ordering {
+fn compare_candidate_for_lo_stack(left: &RevisionCandidate, right: &RevisionCandidate) -> Ordering {
     left.start_cp
         .cmp(&right.start_cp)
         .then_with(|| left.end_cp.cmp(&right.end_cp))
@@ -2601,7 +2630,9 @@ fn augment_midword_adjacent_insertions(entries: &mut Vec<RevisionEntry>) {
     });
 }
 
-fn augment_whitespace_adjacent_insertions_across_empty_companions(entries: &mut Vec<RevisionEntry>) {
+fn augment_whitespace_adjacent_insertions_across_empty_companions(
+    entries: &mut Vec<RevisionEntry>,
+) {
     if entries.len() < 3 {
         return;
     }
@@ -2621,7 +2652,8 @@ fn augment_whitespace_adjacent_insertions_across_empty_companions(entries: &mut 
         );
         match by_end.get(&end_key).copied() {
             Some(existing_idx)
-                if text_quality_score(&entries[existing_idx].text) >= text_quality_score(&entry.text) => {}
+                if text_quality_score(&entries[existing_idx].text)
+                    >= text_quality_score(&entry.text) => {}
             _ => {
                 by_end.insert(end_key, idx);
             }
@@ -2635,7 +2667,8 @@ fn augment_whitespace_adjacent_insertions_across_empty_companions(entries: &mut 
         );
         match by_start.get(&start_key).copied() {
             Some(existing_idx)
-                if text_quality_score(&entries[existing_idx].text) >= text_quality_score(&entry.text) => {}
+                if text_quality_score(&entries[existing_idx].text)
+                    >= text_quality_score(&entry.text) => {}
             _ => {
                 by_start.insert(start_key, idx);
             }
@@ -2678,7 +2711,8 @@ fn augment_whitespace_adjacent_insertions_across_empty_companions(entries: &mut 
         if left.start_cp >= left.end_cp || right.start_cp >= right.end_cp {
             continue;
         }
-        if left.revision_type != RevisionType::Insertion || right.revision_type != RevisionType::Insertion
+        if left.revision_type != RevisionType::Insertion
+            || right.revision_type != RevisionType::Insertion
         {
             continue;
         }
@@ -2707,7 +2741,12 @@ fn augment_whitespace_adjacent_insertions_across_empty_companions(entries: &mut 
         {
             continue;
         }
-        if !left.text.chars().next_back().is_some_and(|ch| ch.is_whitespace()) {
+        if !left
+            .text
+            .chars()
+            .next_back()
+            .is_some_and(|ch| ch.is_whitespace())
+        {
             continue;
         }
         if !right
@@ -2763,8 +2802,16 @@ fn augment_punctuation_adjacent_entries(entries: &mut Vec<RevisionEntry>) {
         return;
     }
 
-    let mut by_start =
-        HashMap::<(RevisionType, u32, Option<String>, Option<String>, Option<u32>), usize>::new();
+    let mut by_start = HashMap::<
+        (
+            RevisionType,
+            u32,
+            Option<String>,
+            Option<String>,
+            Option<u32>,
+        ),
+        usize,
+    >::new();
     for (idx, entry) in entries.iter().enumerate() {
         let key = (
             entry.revision_type,
@@ -2775,7 +2822,8 @@ fn augment_punctuation_adjacent_entries(entries: &mut Vec<RevisionEntry>) {
         );
         match by_start.get(&key).copied() {
             Some(existing_idx)
-                if text_quality_score(&entries[existing_idx].text) >= text_quality_score(&entry.text) => {}
+                if text_quality_score(&entries[existing_idx].text)
+                    >= text_quality_score(&entry.text) => {}
             _ => {
                 by_start.insert(key, idx);
             }
@@ -2848,13 +2896,14 @@ fn augment_punctuation_adjacent_entries(entries: &mut Vec<RevisionEntry>) {
     });
 }
 
-fn augment_sentence_adjacent_insertions_across_timestamp_transition(entries: &mut Vec<RevisionEntry>) {
+fn augment_sentence_adjacent_insertions_across_timestamp_transition(
+    entries: &mut Vec<RevisionEntry>,
+) {
     if entries.len() < 2 {
         return;
     }
 
-    let mut by_start =
-        HashMap::<(u32, Option<String>, Option<u32>), usize>::new();
+    let mut by_start = HashMap::<(u32, Option<String>, Option<u32>), usize>::new();
     for (idx, entry) in entries.iter().enumerate() {
         if entry.revision_type != RevisionType::Insertion {
             continue;
@@ -2862,7 +2911,8 @@ fn augment_sentence_adjacent_insertions_across_timestamp_transition(entries: &mu
         let key = (entry.start_cp, entry.author.clone(), entry.paragraph_index);
         match by_start.get(&key).copied() {
             Some(existing_idx)
-                if text_quality_score(&entries[existing_idx].text) >= text_quality_score(&entry.text) => {}
+                if text_quality_score(&entries[existing_idx].text)
+                    >= text_quality_score(&entry.text) => {}
             _ => {
                 by_start.insert(key, idx);
             }
@@ -2983,7 +3033,8 @@ fn augment_defined_term_adjacent_insertions_after_short_prefix(entries: &mut Vec
         let start_key = (entry.start_cp, entry.author.clone(), entry.paragraph_index);
         match by_start.get(&start_key).copied() {
             Some(existing_idx)
-                if text_quality_score(&entries[existing_idx].text) >= text_quality_score(&entry.text) => {}
+                if text_quality_score(&entries[existing_idx].text)
+                    >= text_quality_score(&entry.text) => {}
             _ => {
                 by_start.insert(start_key, idx);
             }
@@ -2991,7 +3042,8 @@ fn augment_defined_term_adjacent_insertions_after_short_prefix(entries: &mut Vec
         let end_key = (entry.end_cp, entry.author.clone(), entry.paragraph_index);
         match by_end.get(&end_key).copied() {
             Some(existing_idx)
-                if text_quality_score(&entries[existing_idx].text) >= text_quality_score(&entry.text) => {}
+                if text_quality_score(&entries[existing_idx].text)
+                    >= text_quality_score(&entry.text) => {}
             _ => {
                 by_end.insert(end_key, idx);
             }
@@ -3014,7 +3066,11 @@ fn augment_defined_term_adjacent_insertions_after_short_prefix(entries: &mut Vec
             continue;
         }
 
-        let left_key = (middle.start_cp, middle.author.clone(), middle.paragraph_index);
+        let left_key = (
+            middle.start_cp,
+            middle.author.clone(),
+            middle.paragraph_index,
+        );
         let Some(&left_idx) = by_end.get(&left_key) else {
             continue;
         };
@@ -3035,14 +3091,22 @@ fn augment_defined_term_adjacent_insertions_after_short_prefix(entries: &mut Vec
             continue;
         }
 
-        let (Some(left_para), Some(middle_para), Some(right_para), Some(left_offset), Some(middle_offset), Some(right_offset)) = (
+        let (
+            Some(left_para),
+            Some(middle_para),
+            Some(right_para),
+            Some(left_offset),
+            Some(middle_offset),
+            Some(right_offset),
+        ) = (
             left.paragraph_index,
             middle.paragraph_index,
             right.paragraph_index,
             left.char_offset,
             middle.char_offset,
             right.char_offset,
-        ) else {
+        )
+        else {
             continue;
         };
         if left_para != middle_para || middle_para != right_para {
@@ -3057,8 +3121,18 @@ fn augment_defined_term_adjacent_insertions_after_short_prefix(entries: &mut Vec
             continue;
         }
 
-        if left.text.chars().filter(|ch| ch.is_ascii_alphanumeric()).count() < 3
-            || left.text.chars().filter(|ch| ch.is_ascii_alphanumeric()).count() > 5
+        if left
+            .text
+            .chars()
+            .filter(|ch| ch.is_ascii_alphanumeric())
+            .count()
+            < 3
+            || left
+                .text
+                .chars()
+                .filter(|ch| ch.is_ascii_alphanumeric())
+                .count()
+                > 5
         {
             continue;
         }
@@ -3094,8 +3168,18 @@ fn augment_defined_term_adjacent_insertions_after_short_prefix(entries: &mut Vec
         {
             continue;
         }
-        if middle.text.chars().filter(|ch| ch.is_ascii_alphanumeric()).count() < 20
-            || right.text.chars().filter(|ch| ch.is_ascii_alphanumeric()).count() < 20
+        if middle
+            .text
+            .chars()
+            .filter(|ch| ch.is_ascii_alphanumeric())
+            .count()
+            < 20
+            || right
+                .text
+                .chars()
+                .filter(|ch| ch.is_ascii_alphanumeric())
+                .count()
+                < 20
         {
             continue;
         }
@@ -3147,13 +3231,14 @@ fn augment_defined_term_adjacent_insertions_after_short_prefix(entries: &mut Vec
     });
 }
 
-fn augment_midword_adjacent_insertions_across_timestamp_transition(entries: &mut Vec<RevisionEntry>) {
+fn augment_midword_adjacent_insertions_across_timestamp_transition(
+    entries: &mut Vec<RevisionEntry>,
+) {
     if entries.len() < 2 {
         return;
     }
 
-    let mut by_start =
-        HashMap::<(u32, Option<String>, Option<u32>), usize>::new();
+    let mut by_start = HashMap::<(u32, Option<String>, Option<u32>), usize>::new();
     for (idx, entry) in entries.iter().enumerate() {
         if entry.revision_type != RevisionType::Insertion {
             continue;
@@ -3161,7 +3246,8 @@ fn augment_midword_adjacent_insertions_across_timestamp_transition(entries: &mut
         let key = (entry.start_cp, entry.author.clone(), entry.paragraph_index);
         match by_start.get(&key).copied() {
             Some(existing_idx)
-                if text_quality_score(&entries[existing_idx].text) >= text_quality_score(&entry.text) => {}
+                if text_quality_score(&entries[existing_idx].text)
+                    >= text_quality_score(&entry.text) => {}
             _ => {
                 by_start.insert(key, idx);
             }
@@ -3277,7 +3363,8 @@ fn augment_short_token_insertions_across_timestamp_transition(entries: &mut Vec<
         let key = (entry.start_cp, entry.author.clone(), entry.paragraph_index);
         match by_start.get(&key).copied() {
             Some(existing_idx)
-                if text_quality_score(&entries[existing_idx].text) >= text_quality_score(&entry.text) => {}
+                if text_quality_score(&entries[existing_idx].text)
+                    >= text_quality_score(&entry.text) => {}
             _ => {
                 by_start.insert(key, idx);
             }
@@ -3336,7 +3423,8 @@ fn augment_short_token_insertions_across_timestamp_transition(entries: &mut Vec<
             left.char_offset,
             middle.char_offset,
             right.char_offset,
-        ) else {
+        )
+        else {
             continue;
         };
         if left_para != middle_para || middle_para != right_para {
@@ -3351,8 +3439,18 @@ fn augment_short_token_insertions_across_timestamp_transition(entries: &mut Vec<
             continue;
         }
 
-        if left.text.chars().filter(|ch| ch.is_ascii_alphanumeric()).count() < 20
-            || right.text.chars().filter(|ch| ch.is_ascii_alphanumeric()).count() < 12
+        if left
+            .text
+            .chars()
+            .filter(|ch| ch.is_ascii_alphanumeric())
+            .count()
+            < 20
+            || right
+                .text
+                .chars()
+                .filter(|ch| ch.is_ascii_alphanumeric())
+                .count()
+                < 12
         {
             continue;
         }
@@ -3364,7 +3462,11 @@ fn augment_short_token_insertions_across_timestamp_transition(entries: &mut Vec<
         {
             continue;
         }
-        let middle_alnum = middle.text.chars().filter(|ch| ch.is_ascii_alphanumeric()).count();
+        let middle_alnum = middle
+            .text
+            .chars()
+            .filter(|ch| ch.is_ascii_alphanumeric())
+            .count();
         if middle_alnum == 0 || middle_alnum > 4 {
             continue;
         }
@@ -3788,8 +3890,10 @@ fn augment_ordinal_suffix_deletion_tails(entries: &mut Vec<RevisionEntry>) {
                 match best {
                     Some(existing_best) => {
                         let candidate_key = (text_quality_score(&candidate.text), candidate.end_cp);
-                        let best_key =
-                            (text_quality_score(&existing_best.text), existing_best.end_cp);
+                        let best_key = (
+                            text_quality_score(&existing_best.text),
+                            existing_best.end_cp,
+                        );
                         if candidate_key > best_key {
                             best = Some(candidate);
                         }
@@ -3811,7 +3915,11 @@ fn augment_ordinal_suffix_deletion_tails(entries: &mut Vec<RevisionEntry>) {
         if fragments < 3 || !saw_alnum {
             continue;
         }
-        if !merged_text.chars().next().is_some_and(|ch| ch.is_whitespace()) {
+        if !merged_text
+            .chars()
+            .next()
+            .is_some_and(|ch| ch.is_whitespace())
+        {
             continue;
         }
         if text_quality_score(&merged_text).0 < 24 {
@@ -3991,7 +4099,12 @@ fn augment_ordinal_suffix_prefix_aliases(entries: &mut Vec<RevisionEntry>) {
                 {
                     continue;
                 }
-                if trimmed.chars().filter(|ch| ch.is_ascii_alphanumeric()).count() < 20 {
+                if trimmed
+                    .chars()
+                    .filter(|ch| ch.is_ascii_alphanumeric())
+                    .count()
+                    < 20
+                {
                     continue;
                 }
                 if text_contains_structural_chars(&merged_text) {
@@ -4398,8 +4511,7 @@ fn augment_mirrored_full_span_for_type(
                 || next.author != first.author
                 || next.timestamp != first.timestamp
                 || next.paragraph_index != first.paragraph_index
-                || !mirrored_other_side
-                    .contains(&(next.start_cp, next.end_cp, next.text.clone()))
+                || !mirrored_other_side.contains(&(next.start_cp, next.end_cp, next.text.clone()))
             {
                 break;
             }
@@ -5246,24 +5358,21 @@ mod tests {
     };
 
     use super::{
-        RevisionCandidate, augment_dual_bridge_entries,
-        augment_defined_term_adjacent_insertions_after_short_prefix,
-        augment_label_amount_line_item_aliases,
-        augment_midword_adjacent_insertions,
+        LoOverlapRunInfo, LoOverlapVisibleChar, RevisionCandidate,
+        augment_defined_term_adjacent_insertions_after_short_prefix, augment_dual_bridge_entries,
+        augment_label_amount_line_item_aliases, augment_midword_adjacent_insertions,
         augment_midword_adjacent_insertions_across_timestamp_transition,
-        augment_ordinal_suffix_deletion_tails,
-        augment_punctuation_adjacent_entries,
+        augment_mirrored_deletion_prefix_clips, augment_mirrored_full_span_entries,
+        augment_ordinal_suffix_deletion_tails, augment_punctuation_adjacent_entries,
         augment_sentence_adjacent_insertions_across_timestamp_transition,
         augment_sentence_clause_aliases_from_tail_evidence,
         augment_short_token_insertions_across_timestamp_transition,
         augment_whitespace_adjacent_insertions_across_empty_companions,
-        augment_mirrored_deletion_prefix_clips, augment_mirrored_full_span_entries,
-        lo_current_text_overlap_alias_text_ok, lo_current_text_overlap_span_respects_run_edges,
-        simulate_lo_current_text_overlap_block, simulate_lo_current_text_overlap_clipped_alias,
-        simulate_lo_current_text_overlap_range_mutation_alias,
-        LoOverlapRunInfo, LoOverlapVisibleChar,
         compute_structural_ts_repairs, deleted_annotation_reference_enabled,
-        emit_empty_insertion_companion, extract_revisions, sort_candidates_for_lo_append,
+        emit_empty_insertion_companion, extract_revisions, lo_current_text_overlap_alias_text_ok,
+        lo_current_text_overlap_span_respects_run_edges, simulate_lo_current_text_overlap_block,
+        simulate_lo_current_text_overlap_clipped_alias,
+        simulate_lo_current_text_overlap_range_mutation_alias, sort_candidates_for_lo_append,
         suppress_mid_paragraph_empty_insertions,
     };
 
@@ -5580,8 +5689,17 @@ mod tests {
             .map(|entry| (entry.start_cp, entry.end_cp))
             .collect();
         assert_eq!(segments, vec![(0, 3), (3, 4), (4, 6), (6, 8)]);
-        assert!(out.iter().any(|entry| entry.text.is_empty() && entry.start_cp == entry.end_cp));
-        assert_eq!(out.iter().find(|entry| !entry.text.is_empty()).unwrap().text, "ab ");
+        assert!(
+            out.iter()
+                .any(|entry| entry.text.is_empty() && entry.start_cp == entry.end_cp)
+        );
+        assert_eq!(
+            out.iter()
+                .find(|entry| !entry.text.is_empty())
+                .unwrap()
+                .text,
+            "ab "
+        );
     }
 
     #[test]
