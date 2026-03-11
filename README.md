@@ -4,7 +4,9 @@
 
 # DocRedlines
 
-Fast legacy `.doc` redline extraction via a Rust NIF.
+Fast legacy `.doc` redline extraction via a Rust NIF. Built to closely match
+LibreOffice’s track-changes output and achieve near-parity on real-world
+documents.
 
 ## Install
 
