@@ -328,7 +328,7 @@ fn augment_short_fragment_contiguous_aliases(entries: &mut Vec<RevisionEntry>) {
     }
 
     let mut additions = Vec::<RevisionEntry>::new();
-    for ((rev_type, author, timestamp, para_idx), group) in by_sig {
+    for ((rev_type, author, timestamp, _para_idx), group) in by_sig {
         let mut best_by_start: BTreeMap<u32, &RevisionEntry> = BTreeMap::new();
         for entry in group {
             let key = entry.start_cp;

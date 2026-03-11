@@ -39,7 +39,7 @@ pub fn extract_revisions_from_doc(
 #[derive(NifStruct)]
 #[module = "DocRedlines.Redline"]
 struct NifRedline {
-    #[nif(rename = "type")]
+    #[rustler(rename = "type")]
     r#type: Atom,
     text: String,
     author: Option<String>,
@@ -86,4 +86,4 @@ fn extract_redlines_from_path(path: String) -> Result<NifResult, String> {
     Ok(NifResult { redlines })
 }
 
-rustler::init!("Elixir.DocRedlines.Native", [extract_redlines_from_path]);
+rustler::init!("Elixir.DocRedlines.Native");
